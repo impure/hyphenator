@@ -68,7 +68,7 @@ class DefaultResourceLoader extends ResourceLoader {
   ]) async {
 
     return await rootBundle.loadStructuredData(
-      'packages/hyphenator/hyphenate_patterns/${lang._fileName}',
+      'packages/hyphenator_impure/hyphenate_patterns/${lang._fileName}',
       (value) async {
         final lines = value
             .split('\n')
