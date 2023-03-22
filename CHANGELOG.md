@@ -1,3 +1,5 @@
+## [0.1.2] - Added Danish support
+
 ## [0.1.1] - Fixed an incorrect resource path causing a crash
 
 ## [0.1.0] - Migrated to null safety
