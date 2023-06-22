@@ -1,7 +1,7 @@
 import 'dart:math' as Math show min, max;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hyphenator/hyphenator.dart';
+import 'package:hyphenator_impure/hyphenator.dart';
 
 void main() async {
   TestWidgetsFlutterBinding.ensureInitialized();
