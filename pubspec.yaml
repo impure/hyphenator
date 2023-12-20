@@ -1,6 +1,6 @@
 name: hyphenator_impure
 description: Hyphenator
-version: 0.1.2
+version: 0.1.3
 homepage: https://github.com/nikitadol/hyphenator
 
 environment:
