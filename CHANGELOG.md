@@ -1,3 +1,7 @@
+## 0.1.4
+
+- Fixed typo in Italian
+
 ## 0.1.3
 
 - Added multiple languages
