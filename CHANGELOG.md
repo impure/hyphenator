@@ -1,3 +1,7 @@
+## 0.1.5
+
+- Added Ukrainian support
+
 ## 0.1.4
 
 - Fixed typo in Italian
