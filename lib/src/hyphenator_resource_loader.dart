@@ -28,7 +28,8 @@ enum DefaultResourceLoaderLanguage {
   ro,
   ru,
   sv,
-  tr
+  tr,
+  uk,
 }
 
 /// Files from: https://tug.org/tex-hyphen/
@@ -172,9 +173,8 @@ extension on DefaultResourceLoaderLanguage {
         return _name('sv');
       case DefaultResourceLoaderLanguage.tr:
         return _name('tr');
-
-      default:
-        throw Exception('Invalid value');
+      case DefaultResourceLoaderLanguage.uk:
+        return _name('uk');
     }
   }
 }
