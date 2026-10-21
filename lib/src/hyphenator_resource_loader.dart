@@ -84,44 +84,51 @@ class DefaultResourceLoader extends ResourceLoader {
   static Future<DefaultResourceLoader> load([
     DefaultResourceLoaderLanguage lang = DefaultResourceLoaderLanguage.enUs,
   ]) async {
-    return await rootBundle.loadStructuredData(
-      'packages/hyphenator_impure/hyphenate_patterns/${lang._fileName}',
-      (value) async {
-        final lines = value
-            .split('\n')
-            .where(
-              (e) => e.isNotEmpty && !e.startsWith('%'),
-            )
-            .map(
-              (e) => e.trim(),
-            );
+    final pat = <String>[];
+    final exc = <String>[];
 
-        final pat = <String>[];
-        final exc = <String>[];
+    await _parse(lang._fileName, pat, exc);
 
-        bool isNextPattern = false;
-        bool isNextException = false;
-
-        for (final line in lines) {
-          if (line.startsWith('}')) {
-            isNextPattern = false;
-            isNextException = false;
-          } else if (!isNextPattern && line.startsWith('\\patterns')) {
-            isNextPattern = true;
-          } else if (!isNextException && line.startsWith('\\hyphenation')) {
-            isNextException = true;
-          } else if (isNextPattern && !isNextException) {
-            pat.add(line);
-          } else if (isNextException) {
-            exc.add(line);
-          }
-        }
-        return DefaultResourceLoader._(
-          pat,
-          exc,
-        );
-      },
+    return DefaultResourceLoader._(
+      pat,
+      exc,
     );
+  }
+
+  static Future<void> _parse(
+    String fileName,
+    List<String> pat,
+    List<String> exc,
+  ) async {
+    final value = await rootBundle.loadString(
+      'packages/hyphenator_impure/hyphenate_patterns/$fileName',
+    );
+
+    List<String>? target;
+    bool isNextInput = false;
+
+    for (final line in value.split('\n')) {
+      for (final token in line.split('%').first.split(RegExp(r'\s+'))) {
+        if (token.isEmpty) continue;
+
+        if (isNextInput) {
+          isNextInput = false;
+          await _parse(token, pat, exc);
+        } else if (token == '\\input') {
+          isNextInput = true;
+        } else if (token.startsWith('\\patterns{')) {
+          target = pat;
+        } else if (token.startsWith('\\hyphenation{')) {
+          target = exc;
+        } else {
+          final isEnd = token.endsWith('}');
+          final entry = isEnd ? token.substring(0, token.length - 1) : token;
+
+          if (entry.isNotEmpty) target?.add(entry);
+          if (isEnd) target = null;
+        }
+      }
+    }
   }
 }
 

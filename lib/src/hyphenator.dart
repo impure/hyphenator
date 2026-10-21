@@ -1,7 +1,6 @@
 
 import 'extensions.dart';
 import 'hyphenator_resource_loader.dart';
-import 'pattern.dart';
 
 const _startEndMarker = '.';
 const _exceptionDelimiter = '-';
@@ -28,6 +27,24 @@ List<int> _createExceptionMask(String exc) {
   return list;
 }
 
+MapEntry<String, List<int>> _parsePattern(String pattern) {
+  final letters = StringBuffer();
+  final levels = <int>[0];
+
+  for (int i = 0; i < pattern.length; i++) {
+    final c = pattern[i];
+
+    if (c.isDigit) {
+      levels.last = c.asInt!;
+    } else {
+      letters.write(c);
+      levels.add(0);
+    }
+  }
+
+  return MapEntry(letters.toString(), levels);
+}
+
 class Hyphenator {
   Hyphenator({
     required ResourceLoader resource,
@@ -35,12 +52,13 @@ class Hyphenator {
     this.minWordLength = 5,
     this.minLetterCount = 3,
   })  : assert(minWordLength > 0),
-        _patterns = resource.patternsStrings
-            .map(
-              (pattern) => Pattern.from(pattern),
-            )
-            .toList()
-              ..sort() {
+        _patterns = Map.fromEntries(
+          resource.patternsStrings.map(_parsePattern),
+        ) {
+    _maxPatternLength = _patterns.keys.fold(
+      0,
+      (length, pattern) => pattern.length > length ? pattern.length : length,
+    );
     _exceptions.addEntries(
       resource.exceptionsStrings.map(
         (exception) => MapEntry(
@@ -51,7 +69,8 @@ class Hyphenator {
     );
   }
 
-  final List<Pattern> _patterns;
+  final Map<String, List<int>> _patterns;
+  late final int _maxPatternLength;
   final Map<String, List<int>> _exceptions = {};
   final String hyphenateSymbol;
   final int minWordLength;
@@ -119,34 +138,26 @@ class Hyphenator {
   List<int> _generateLevelsForWord(String word) {
     final wordString = '$_startEndMarker$word$_startEndMarker';
 
-    final levels = List.filled(wordString.length, 0);
+    final levels = List.filled(wordString.length + 1, 0);
 
-    for (int i = 0; i < wordString.length - 2; ++i) {
-      int patternIndex = 0;
+    for (int i = 0; i < wordString.length; ++i) {
+      for (int end = i + 1;
+          end <= wordString.length && end - i <= _maxPatternLength;
+          ++end) {
+        final patternLevels = _patterns[wordString.substring(i, end)];
 
-      for (int count = 1; count <= wordString.length - i; ++count) {
-        var patternFromWord = Pattern(wordString.substring(i, i + count));
+        if (patternLevels == null) continue;
 
-        if (patternFromWord.compareTo(_patterns[patternIndex]) < 0) continue;
+        for (int levelIndex = 0;
+            levelIndex < patternLevels.length;
+            ++levelIndex) {
+          final level = patternLevels[levelIndex];
 
-        patternIndex = _patterns.indexWhere(
-          (pattern) => pattern.compareTo(patternFromWord) > 0,
-          patternIndex,
-        );
-
-        if (patternIndex == -1) break;
-
-        if (patternFromWord.compareTo(_patterns[patternIndex]) >= 0)
-          for (int levelIndex = 0;
-              levelIndex < _patterns[patternIndex].levelsCount - 1;
-              ++levelIndex) {
-            int level = _patterns[patternIndex].levelByIndex(levelIndex)!;
-
-            if (level > levels[i + levelIndex]) levels[i + levelIndex] = level;
-          }
+          if (level > levels[i + levelIndex]) levels[i + levelIndex] = level;
+        }
       }
     }
-    return levels;
+    return levels.sublist(0, wordString.length);
   }
 
   List<int> _hyphenatedMaskFromLevels(List<int> levels) {
